@@ -1,0 +1,40 @@
+{
+  "runcontract": 1,
+  "services": [
+    {
+      "name": "api",
+      "dir": "backend",
+      "stack": "python",
+      "kind": "server",
+      "install": [
+        ["${python}", "-m", "pip", "install", "-q", "-r", "requirements.txt"]
+      ],
+      "start": ["${python}", "-m", "uvicorn", "backend.main:app", "--port", "${PORT}"],
+      "port": 3000,
+      "port_env": "PORT",
+      "health": { "path": "/api/health", "expect_status": [200] },
+      "env": {
+        "JWT_SECRET": { "generate": "hex", "bytes": 32 },
+        "DATABASE_URL": { "dev": "sqlite:///./wardrobe.db" },
+        "UPLOAD_DIR": { "dev": "./uploads" },
+        "CORS_ORIGINS": { "dev": "${service:frontend.origin}" }
+      }
+    },
+    {
+      "name": "frontend",
+      "dir": "frontend",
+      "stack": "web-vite",
+      "kind": "server",
+      "install": [
+        ["npm", "ci"]
+      ],
+      "start": ["npm", "run", "dev", "--", "--port", "${PORT}"],
+      "port": 5173,
+      "port_env": "PORT",
+      "ready_log": "Local:",
+      "env": {
+        "VITE_API_URL": { "dev": "${service:api.origin}" }
+      }
+    }
+  ]
+}
